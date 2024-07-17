@@ -1,0 +1,165 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Schedule Planner</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+        }
+        .container {
+            width: 60%;
+            margin: auto;
+            text-align: center;
+        }
+        .date-input {
+            margin: 20px 0;
+        }
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-bottom: 20px;
+        }
+        th, td {
+            border: 1px solid black;
+            padding: 8px;
+            text-align: center;
+        }
+        .add-row-btn, .done-btn {
+            padding: 10px 20px;
+            margin: 10px;
+            cursor: pointer;
+        }
+        .print-page {
+            display: none;
+            text-align: center;
+        }
+        .print-page table {
+            width: 100%;
+        }
+        .print-page .header {
+            font-size: 30px;
+            margin-bottom: 10px;
+            text-align: center;
+        }
+        .print-page .date {
+            font-size: 24px;
+            margin-bottom: 20px;
+            text-align: center;
+        }
+        @media print {
+            .done-btn {
+                display: none;
+            }
+        }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <div class="date-input">
+        <label for="date">Date: </label>
+        <input type="text" id="date" placeholder="mm/dd/yyyy">
+    </div>
+    <table id="schedule-table">
+        <thead>
+            <tr>
+                <th>Start Time</th>
+                <th>End Time</th>
+                <th>Plan</th>
+                <th>Remove?</th>
+            </tr>
+        </thead>
+        <tbody>
+            <!-- Rows will be added here -->
+        </tbody>
+    </table>
+    <button class="add-row-btn" onclick="addRow()">+</button>
+    <button class="done-btn" onclick="showPrintPage()">Done</button>
+</div>
+
+<div class="print-page" id="print-page">
+    <div class="header">My Schedule</div>
+    <div class="date" id="print-date"></div>
+    <table id="print-table">
+        <thead>
+            <tr>
+                <th>Start Time</th>
+                <th>End Time</th>
+                <th>Plan</th>
+            </tr>
+        </thead>
+        <tbody>
+            <!-- Rows will be added here -->
+        </tbody>
+    </table>
+    <button class="done-btn" onclick="printPage()">Save as PDF</button>
+    <button class="done-btn" onclick="goBack()">Back to Edit</button>
+</div>
+
+<script>
+    function addRow() {
+        const table = document.getElementById('schedule-table').getElementsByTagName('tbody')[0];
+        const newRow = table.insertRow();
+        const startTimeCell = newRow.insertCell(0);
+        const endTimeCell = newRow.insertCell(1);
+        const planCell = newRow.insertCell(2);
+        const actionCell = newRow.insertCell(3);
+
+        startTimeCell.innerHTML = '<input type="text" placeholder="Start Time" onfocus="scrollIntoView(this)">';
+        endTimeCell.innerHTML = '<input type="text" placeholder="End Time" onfocus="scrollIntoView(this)">';
+        planCell.innerHTML = '<input type="text" placeholder="Plan" onfocus="scrollIntoView(this)">';
+        actionCell.innerHTML = '<button onclick="removeRow(this)">Remove</button>';
+    }
+
+    function removeRow(button) {
+        const row = button.parentNode.parentNode;
+        row.parentNode.removeChild(row);
+    }
+
+    function showPrintPage() {
+        const printPage = document.getElementById('print-page');
+        const dateInput = document.getElementById('date').value;
+        const printDate = document.getElementById('print-date');
+        const printTableBody = document.getElementById('print-table').getElementsByTagName('tbody')[0];
+        
+        printDate.textContent = dateInput;
+        printTableBody.innerHTML = '';
+
+        const scheduleTableBody = document.getElementById('schedule-table').getElementsByTagName('tbody')[0];
+        for (const row of scheduleTableBody.rows) {
+            const newRow = printTableBody.insertRow();
+            for (let i = 0; i < 3; i++) {
+                const newCell = newRow.insertCell();
+                newCell.textContent = row.cells[i].firstChild.value;
+            }
+        }
+
+        document.querySelector('.container').style.display = 'none';
+        printPage.style.display = 'block';
+    }
+
+    function goBack() {
+        document.querySelector('.container').style.display = 'block';
+        document.getElementById('print-page').style.display = 'none';
+    }
+
+    function printPage() {
+        window.print();
+    }
+
+    function scrollIntoView(element) {
+        element.scrollIntoView({behavior: 'smooth', block: 'center'});
+    }
+
+    // Prevent scrolling to top on button click
+    document.querySelectorAll('button').forEach(button => {
+        button.addEventListener('click', (event) => {
+            event.preventDefault();
+        });
+    });
+</script>
+
+</body>
+</html>
