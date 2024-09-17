@@ -75,7 +75,8 @@
             <!-- Rows will be added here -->
         </tbody>
     </table>
-    <button class="add-row-btn" onclick="addRow()">+</button>
+    <button class="add-row-btn" onclick="addRow()">Add Row at End</button>
+    <button class="add-row-btn" onclick="insertRowPrompt()">Insert Row</button>
     <button class="done-btn" onclick="showPrintPage()">Done</button>
 </div>
 
@@ -99,9 +100,16 @@
 </div>
 
 <script>
-    function addRow() {
+    function addRow(atIndex = null) {
         const table = document.getElementById('schedule-table').getElementsByTagName('tbody')[0];
-        const newRow = table.insertRow();
+        
+        let newRow;
+        if (atIndex === null) {
+            newRow = table.insertRow();  // Add row at the end
+        } else {
+            newRow = table.insertRow(atIndex);  // Insert row at a specific index
+        }
+
         const startTimeCell = newRow.insertCell(0);
         const endTimeCell = newRow.insertCell(1);
         const planCell = newRow.insertCell(2);
@@ -116,6 +124,17 @@
     function removeRow(button) {
         const row = button.parentNode.parentNode;
         row.parentNode.removeChild(row);
+    }
+
+    function insertRowPrompt() {
+        const table = document.getElementById('schedule-table').getElementsByTagName('tbody')[0];
+        const index = prompt(`Enter the row number (1-${table.rows.length + 1}) where you want to insert the new row:`);
+        
+        if (index !== null && !isNaN(index) && index > 0 && index <= table.rows.length + 1) {
+            addRow(index - 1);  // Insert at the specified row index (0-based)
+        } else {
+            alert('Invalid row number.');
+        }
     }
 
     function showPrintPage() {
