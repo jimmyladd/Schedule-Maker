@@ -77,6 +77,9 @@
     </table>
     <button class="add-row-btn" onclick="addRow()">Add Row at End</button>
     <button class="add-row-btn" onclick="insertRowPrompt()">Insert Row</button>
+    <button class="add-row-btn" onclick="saveSchedule()">Save Schedule</button>
+    <button class="add-row-btn" onclick="loadSchedule()">Load Saved Schedule</button>
+    <button class="add-row-btn" onclick="clearSavedSchedule()">Clear Saved Schedule</button>
     <button class="done-btn" onclick="showPrintPage()">Done</button>
 </div>
 
@@ -170,6 +173,58 @@
 
     function scrollIntoView(element) {
         element.scrollIntoView({behavior: 'smooth', block: 'center'});
+    }
+
+    // Save the schedule to localStorage
+    function saveSchedule() {
+        const schedule = [];
+        const dateInput = document.getElementById('date').value;
+
+        const scheduleTableBody = document.getElementById('schedule-table').getElementsByTagName('tbody')[0];
+        for (const row of scheduleTableBody.rows) {
+            const startTime = row.cells[0].firstChild.value;
+            const endTime = row.cells[1].firstChild.value;
+            const plan = row.cells[2].firstChild.value;
+            schedule.push({ startTime, endTime, plan });
+        }
+
+        localStorage.setItem('savedSchedule', JSON.stringify({ date: dateInput, schedule }));
+        alert('Schedule saved!');
+    }
+
+    // Load the saved schedule from localStorage
+    function loadSchedule() {
+        const savedSchedule = JSON.parse(localStorage.getItem('savedSchedule'));
+
+        if (savedSchedule && savedSchedule.schedule) {
+            document.getElementById('date').value = savedSchedule.date;
+
+            const scheduleTableBody = document.getElementById('schedule-table').getElementsByTagName('tbody')[0];
+            scheduleTableBody.innerHTML = ''; // Clear current table
+
+            savedSchedule.schedule.forEach(item => {
+                const newRow = scheduleTableBody.insertRow();
+                const startTimeCell = newRow.insertCell(0);
+                const endTimeCell = newRow.insertCell(1);
+                const planCell = newRow.insertCell(2);
+                const actionCell = newRow.insertCell(3);
+
+                startTimeCell.innerHTML = `<input type="text" value="${item.startTime}" onfocus="scrollIntoView(this)">`;
+                endTimeCell.innerHTML = `<input type="text" value="${item.endTime}" onfocus="scrollIntoView(this)">`;
+                planCell.innerHTML = `<input type="text" value="${item.plan}" onfocus="scrollIntoView(this)">`;
+                actionCell.innerHTML = '<button onclick="removeRow(this)">Remove</button>';
+            });
+
+            alert('Schedule loaded!');
+        } else {
+            alert('No saved schedule found.');
+        }
+    }
+
+    // Clear the saved schedule from localStorage
+    function clearSavedSchedule() {
+        localStorage.removeItem('savedSchedule');
+        alert('Saved schedule cleared!');
     }
 
     // Prevent scrolling to top on button click
