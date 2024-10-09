@@ -31,6 +31,10 @@
             margin: 10px;
             cursor: pointer;
         }
+        .insert-row-btn {
+            margin-left: 10px;
+            cursor: pointer;
+        }
         .print-page {
             display: none;
             text-align: center;
@@ -68,7 +72,7 @@
                 <th>Start Time</th>
                 <th>End Time</th>
                 <th>Plan</th>
-                <th>Remove?</th>
+                <th>Actions</th>
             </tr>
         </thead>
         <tbody>
@@ -76,10 +80,20 @@
         </tbody>
     </table>
     <button class="add-row-btn" onclick="addRow()">Add Row at End</button>
-    <button class="add-row-btn" onclick="insertRowPrompt()">Insert Row</button>
-    <button class="add-row-btn" onclick="saveSchedule()">Save Schedule</button>
-    <button class="add-row-btn" onclick="loadSchedule()">Load Saved Schedule</button>
-    <button class="add-row-btn" onclick="clearSavedSchedule()">Clear Saved Schedule</button>
+    
+    <div>
+        <label for="schedule-label">Label for Schedule:</label>
+        <input type="text" id="schedule-label" placeholder="Enter label for this schedule">
+        <button class="add-row-btn" onclick="saveSchedule()">Save Schedule</button>
+    </div>
+    
+    <div>
+        <label for="saved-schedules">Load Saved Schedule:</label>
+        <select id="saved-schedules"></select>
+        <button class="add-row-btn" onclick="loadSchedule()">Load</button>
+        <button class="add-row-btn" onclick="deleteSchedule()">Delete</button>
+    </div>
+    
     <button class="done-btn" onclick="showPrintPage()">Done</button>
 </div>
 
@@ -118,26 +132,24 @@
         const planCell = newRow.insertCell(2);
         const actionCell = newRow.insertCell(3);
 
-        startTimeCell.innerHTML = '<input type="text" placeholder="Start Time" onfocus="scrollIntoView(this)">';
-        endTimeCell.innerHTML = '<input type="text" placeholder="End Time" onfocus="scrollIntoView(this)">';
-        planCell.innerHTML = '<input type="text" placeholder="Plan" onfocus="scrollIntoView(this)">';
-        actionCell.innerHTML = '<button onclick="removeRow(this)">Remove</button>';
+        startTimeCell.innerHTML = '<input type="text" placeholder="Start Time">';
+        endTimeCell.innerHTML = '<input type="text" placeholder="End Time">';
+        planCell.innerHTML = '<input type="text" placeholder="Plan">';
+        actionCell.innerHTML = `
+            <button onclick="removeRow(this)">Remove</button>
+            <button class="insert-row-btn" onclick="insertRowBelow(this)">Insert Row Below</button>
+        `;
+    }
+
+    function insertRowBelow(button) {
+        const row = button.parentNode.parentNode;
+        const rowIndex = row.rowIndex;
+        addRow(rowIndex);
     }
 
     function removeRow(button) {
         const row = button.parentNode.parentNode;
         row.parentNode.removeChild(row);
-    }
-
-    function insertRowPrompt() {
-        const table = document.getElementById('schedule-table').getElementsByTagName('tbody')[0];
-        const index = prompt(`Enter the row number (1-${table.rows.length + 1}) where you want to insert the new row:`);
-        
-        if (index !== null && !isNaN(index) && index > 0 && index <= table.rows.length + 1) {
-            addRow(index - 1);  // Insert at the specified row index (0-based)
-        } else {
-            alert('Invalid row number.');
-        }
     }
 
     function showPrintPage() {
@@ -171,12 +183,13 @@
         window.print();
     }
 
-    function scrollIntoView(element) {
-        element.scrollIntoView({behavior: 'smooth', block: 'center'});
-    }
-
-    // Save the schedule to localStorage
     function saveSchedule() {
+        const scheduleLabel = document.getElementById('schedule-label').value.trim();
+        if (!scheduleLabel) {
+            alert('Please enter a label for the schedule.');
+            return;
+        }
+
         const schedule = [];
         const dateInput = document.getElementById('date').value;
 
@@ -188,51 +201,75 @@
             schedule.push({ startTime, endTime, plan });
         }
 
-        localStorage.setItem('savedSchedule', JSON.stringify({ date: dateInput, schedule }));
+        const savedSchedules = JSON.parse(localStorage.getItem('savedSchedules')) || {};
+        savedSchedules[scheduleLabel] = { date: dateInput, schedule };
+        localStorage.setItem('savedSchedules', JSON.stringify(savedSchedules));
+
+        updateScheduleDropdown();
         alert('Schedule saved!');
     }
 
-    // Load the saved schedule from localStorage
     function loadSchedule() {
-        const savedSchedule = JSON.parse(localStorage.getItem('savedSchedule'));
+        const savedSchedules = JSON.parse(localStorage.getItem('savedSchedules')) || {};
+        const selectedSchedule = document.getElementById('saved-schedules').value;
 
-        if (savedSchedule && savedSchedule.schedule) {
-            document.getElementById('date').value = savedSchedule.date;
+        if (savedSchedules[selectedSchedule]) {
+            const { date, schedule } = savedSchedules[selectedSchedule];
+            document.getElementById('date').value = date;
 
             const scheduleTableBody = document.getElementById('schedule-table').getElementsByTagName('tbody')[0];
             scheduleTableBody.innerHTML = ''; // Clear current table
 
-            savedSchedule.schedule.forEach(item => {
+            schedule.forEach(item => {
                 const newRow = scheduleTableBody.insertRow();
                 const startTimeCell = newRow.insertCell(0);
                 const endTimeCell = newRow.insertCell(1);
                 const planCell = newRow.insertCell(2);
                 const actionCell = newRow.insertCell(3);
 
-                startTimeCell.innerHTML = `<input type="text" value="${item.startTime}" onfocus="scrollIntoView(this)">`;
-                endTimeCell.innerHTML = `<input type="text" value="${item.endTime}" onfocus="scrollIntoView(this)">`;
-                planCell.innerHTML = `<input type="text" value="${item.plan}" onfocus="scrollIntoView(this)">`;
-                actionCell.innerHTML = '<button onclick="removeRow(this)">Remove</button>';
+                startTimeCell.innerHTML = `<input type="text" value="${item.startTime}">`;
+                endTimeCell.innerHTML = `<input type="text" value="${item.endTime}">`;
+                planCell.innerHTML = `<input type="text" value="${item.plan}">`;
+                actionCell.innerHTML = `
+                    <button onclick="removeRow(this)">Remove</button>
+                    <button class="insert-row-btn" onclick="insertRowBelow(this)">Insert Row Below</button>
+                `;
             });
-
-            alert('Schedule loaded!');
         } else {
             alert('No saved schedule found.');
         }
     }
 
-    // Clear the saved schedule from localStorage
-    function clearSavedSchedule() {
-        localStorage.removeItem('savedSchedule');
-        alert('Saved schedule cleared!');
+    function deleteSchedule() {
+        const savedSchedules = JSON.parse(localStorage.getItem('savedSchedules')) || {};
+        const selectedSchedule = document.getElementById('saved-schedules').value;
+
+        if (savedSchedules[selectedSchedule]) {
+            delete savedSchedules[selectedSchedule];
+            localStorage.setItem('savedSchedules', JSON.stringify(savedSchedules));
+
+            updateScheduleDropdown();
+            alert('Schedule deleted.');
+        }
     }
 
-    // Prevent scrolling to top on button click
-    document.querySelectorAll('button').forEach(button => {
-        button.addEventListener('click', (event) => {
-            event.preventDefault();
-        });
-    });
+    function updateScheduleDropdown() {
+        const savedSchedules = JSON.parse(localStorage.getItem('savedSchedules')) || {};
+        const dropdown = document.getElementById('saved-schedules');
+        dropdown.innerHTML = ''; // Clear existing options
+
+        for (const label in savedSchedules) {
+            const option = document.createElement('option');
+            option.value = label;
+            option.textContent = label;
+            dropdown.appendChild(option);
+        }
+    }
+
+    // Initialize the saved schedules dropdown on page load
+    window.onload = function() {
+        updateScheduleDropdown();
+    };
 </script>
 
 </body>
