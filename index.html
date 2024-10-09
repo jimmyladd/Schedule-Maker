@@ -80,6 +80,7 @@
         </tbody>
     </table>
     <button class="add-row-btn" onclick="addRow()">Add Row at End</button>
+    <button class="add-row-btn" onclick="addRowAtStart()">Add Row at Start</button> <!-- New button -->
     
     <div>
         <label for="schedule-label">Label for Schedule:</label>
@@ -139,6 +140,10 @@
             <button onclick="removeRow(this)">Remove</button>
             <button class="insert-row-btn" onclick="insertRowBelow(this)">Insert Row Below</button>
         `;
+    }
+
+    function addRowAtStart() {
+        addRow(0); // Inserts the row at index 0 (first position)
     }
 
     function insertRowBelow(button) {
